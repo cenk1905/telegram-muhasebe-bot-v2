@@ -2,7 +2,7 @@ const { Telegraf } = require('telegraf');
 
 const bot = new Telegraf(process.env.BOT_TOKEN);
 
-// ✔ izinli kullanıcılar (onay yazabilenler)
+// ✔ ONAY atabilecek kullanıcılar
 const allowedUsers = [
     '@vertexfinans',
     '@finans_admin34',
@@ -10,16 +10,24 @@ const allowedUsers = [
     '@soyluuu'
 ].map(u => u.toLowerCase());
 
-// ✔ SAY komutu kullanabilenler
+// ✔ SAY yazabilecek kullanıcılar
 const allowedSayUsers = [
     '@tikopays',
     '@tikopayfinanss'
 ].map(u => u.toLowerCase());
 
 // 💰 DATABASE
-let total = 0;
-let count = 0;
 let logs = [];
+
+// 📅 bugün mü kontrol
+function isToday(date) {
+    const now = new Date();
+    return (
+        date.getDate() === now.getDate() &&
+        date.getMonth() === now.getMonth() &&
+        date.getFullYear() === now.getFullYear()
+    );
+}
 
 // 📩 MESAJ YAKALA
 bot.on('text', (ctx) => {
@@ -32,37 +40,32 @@ bot.on('text', (ctx) => {
         ? '@' + ctx.message.from.username.toLowerCase()
         : '';
 
-    // ❌ izinli değilse çık
-    if (!allowedUsers.includes(user)) {
-
-        // SAY kontrolü yine de çalışabilsin diye burada bırakıyoruz
-        if (text === 'say') {
-
-            if (!allowedSayUsers.includes(user)) return;
-
-            ctx.reply(
-                `📊 GRUP RAPOR\n\n` +
-                `💰 TOPLAM: ${total} TL\n` +
-                `📌 İŞLEM SAYISI: ${count}`
-            );
-        }
-
-        return;
-    }
-
-    // 📊 SAY KOMUTU (yetkili kişiler)
+    // 📊 SAY KOMUTU
     if (text === 'say') {
 
         if (!allowedSayUsers.includes(user)) return;
 
+        let dailyTotal = 0;
+        let dailyCount = 0;
+
+        logs.forEach(item => {
+            if (isToday(item.time)) {
+                dailyTotal += item.amount;
+                dailyCount++;
+            }
+        });
+
         ctx.reply(
-            `📊 GRUP RAPOR\n\n` +
-            `💰 TOPLAM: ${total} TL\n` +
-            `📌 İŞLEM SAYISI: ${count}`
+            `📊 BUGÜN RAPOR (00:01 - 23:59)\n\n` +
+            `💰 TOPLAM: ${dailyTotal} TL\n` +
+            `📌 İŞLEM SAYISI: ${dailyCount}`
         );
 
         return;
     }
+
+    // ❌ izinli değilse çık
+    if (!allowedUsers.includes(user)) return;
 
     // ❌ reply değilse çık
     if (!ctx.message.reply_to_message) return;
@@ -76,13 +79,11 @@ bot.on('text', (ctx) => {
 
     const amount = Math.max(...numbers.map(Number));
 
-    // duplicate engel
-    const msgId = ctx.message.message_id;
-    if (logs.includes(msgId)) return;
-    logs.push(msgId);
-
-    total += amount;
-    count++;
+    logs.push({
+        user,
+        amount,
+        time: new Date()
+    });
 
     ctx.reply(`💰 ${amount} TL kaydedildi`);
 });
