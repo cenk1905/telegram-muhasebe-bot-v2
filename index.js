@@ -1,32 +1,20 @@
 const { Telegraf } = require('telegraf');
-const { GoogleSpreadsheet } = require('google-spreadsheet');
 
 const bot = new Telegraf(process.env.BOT_TOKEN);
 
-// SADECE İZİNLİ KULLANICILAR
+// izinli kullanıcılar
 const allowedUsers = [
     '@vertexfinans',
     '@finans_admin34',
     '@donciccio5'
 ];
 
-// GOOGLE SHEET
-const doc = new GoogleSpreadsheet(process.env.SHEET_ID);
+// RAM DATABASE
+let total = 0;
+let records = [];
 
-// SHEET BAĞLANTI (FIXED - YENİ METHOD)
-async function initSheet() {
-    await doc.useServiceAccountAuth({
-        client_email: process.env.GOOGLE_CLIENT_EMAIL,
-        private_key: process.env.GOOGLE_PRIVATE_KEY.replace(/\\n/g, '\n'),
-    });
-
-    await doc.loadInfo();
-}
-
-initSheet();
-
-// 📌 MESAJ KONTROL
-bot.on('text', async (ctx) => {
+// MESAJ KONTROL
+bot.on('text', (ctx) => {
 
     const text = ctx.message.text.toLowerCase();
 
@@ -34,16 +22,16 @@ bot.on('text', async (ctx) => {
         ? '@' + ctx.message.from.username
         : '';
 
-    // ❌ izinli kullanıcı değilse çık
+    // kullanıcı kontrol
     if (!allowedUsers.includes(user)) return;
 
-    // ❌ SADECE REPLY
+    // reply kontrol
     if (!ctx.message.reply_to_message) return;
 
-    // ❌ "onay" yoksa çık
+    // onay kontrol
     if (!text.includes('onay')) return;
 
-    // 📌 sayı çek
+    // sayı çek
     const numbers = text.match(/\d+/g);
     if (!numbers) return;
 
@@ -53,34 +41,36 @@ bot.on('text', async (ctx) => {
     const date = now.toLocaleDateString('tr-TR');
     const time = now.toLocaleTimeString('tr-TR');
 
-    const sheet = doc.sheetsByIndex[0];
+    total += amount;
 
-    await sheet.addRow({
-        Tarih: date,
-        Saat: time,
-        Kullanici: user,
-        IslemNo: numbers[0],
-        Tutar: amount
+    // kayıt
+    records.push({
+        date,
+        time,
+        user,
+        amount
     });
 
-    ctx.reply(`💰 ${amount} TL kaydedildi`);
+    ctx.reply(`💰 ${amount} TL kaydedildi\n📊 Toplam: ${total} TL`);
 });
 
-// 📊 TOPLAM KOMUTU
-bot.hears('say', async (ctx) => {
+// SAY KOMUTU
+bot.hears('say', (ctx) => {
 
-    const sheet = doc.sheetsByIndex[0];
-    const rows = await sheet.getRows();
+    ctx.reply(
+        `📊 BUGÜN RAPOR\n\n` +
+        `💰 TOPLAM: ${total} TL\n` +
+        `📌 İŞLEM SAYISI: ${records.length}`
+    );
+});
 
-    let total = 0;
-
-    rows.forEach(r => {
-        total += Number(r.Tutar || 0);
-    });
-
-    ctx.reply(`📊 BUGÜN TOPLAM\n💰 ${total} TL`);
+// RESET (opsiyonel)
+bot.hears('reset', (ctx) => {
+    total = 0;
+    records = [];
+    ctx.reply('♻ Sistem sıfırlandı');
 });
 
 bot.launch();
 
-console.log('BOT ÇALIŞIYOR 🚀');
+console.log('BOT ÇALIŞIYOR 🚀'); 
