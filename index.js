@@ -3,7 +3,7 @@ const { GoogleSpreadsheet } = require('google-spreadsheet');
 
 const bot = new Telegraf(process.env.BOT_TOKEN);
 
-// SADECE BU KULLANICILAR
+// SADECE İZİNLİ KULLANICILAR
 const allowedUsers = [
     '@vertexfinans',
     '@finans_admin34',
@@ -13,7 +13,7 @@ const allowedUsers = [
 // GOOGLE SHEET
 const doc = new GoogleSpreadsheet(process.env.SHEET_ID);
 
-// AUTH
+// SHEET BAĞLANTI (FIXED - YENİ METHOD)
 async function initSheet() {
     await doc.useServiceAccountAuth({
         client_email: process.env.GOOGLE_CLIENT_EMAIL,
@@ -34,10 +34,10 @@ bot.on('text', async (ctx) => {
         ? '@' + ctx.message.from.username
         : '';
 
-    // ❌ kullanıcı izinli değilse çık
+    // ❌ izinli kullanıcı değilse çık
     if (!allowedUsers.includes(user)) return;
 
-    // ❌ SADECE REPLY MESAJLARI
+    // ❌ SADECE REPLY
     if (!ctx.message.reply_to_message) return;
 
     // ❌ "onay" yoksa çık
@@ -66,7 +66,7 @@ bot.on('text', async (ctx) => {
     ctx.reply(`💰 ${amount} TL kaydedildi`);
 });
 
-// 📊 TOPLAM
+// 📊 TOPLAM KOMUTU
 bot.hears('say', async (ctx) => {
 
     const sheet = doc.sheetsByIndex[0];
