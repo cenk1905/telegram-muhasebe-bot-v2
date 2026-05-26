@@ -9,11 +9,9 @@ const allowedUsers = [
     '@donciccio5'
 ];
 
-// RAM DATABASE
 let total = 0;
 let records = [];
 
-// MESAJ KONTROL
 bot.on('text', (ctx) => {
 
     const text = ctx.message.text.toLowerCase();
@@ -22,54 +20,28 @@ bot.on('text', (ctx) => {
         ? '@' + ctx.message.from.username
         : '';
 
-    // ❌ kullanıcı değilse çık
     if (!allowedUsers.includes(user)) return;
 
-    // ❌ reply değilse çık
     if (!ctx.message.reply_to_message) return;
 
-    // ❌ onay yoksa çık
     if (!text.includes('onay')) return;
 
-    // 📌 sayı çek
     const numbers = text.match(/\d+/g);
     if (!numbers) return;
 
     const amount = Math.max(...numbers.map(Number));
 
-    const now = new Date();
-    const date = now.toLocaleDateString('tr-TR');
-    const time = now.toLocaleTimeString('tr-TR');
-
     total += amount;
 
-    records.push({
-        user,
-        amount,
-        date,
-        time
-    });
+    records.push(amount);
 
-    ctx.reply(`💰 ${amount} TL kaydedildi\n📊 Toplam: ${total} TL`);
+    ctx.reply(`💰 ${amount} TL kaydedildi\n📊 TOPLAM: ${total} TL`);
 });
 
-// 📊 SAY KOMUTU
 bot.hears('say', (ctx) => {
-
-    ctx.reply(
-        `📊 BUGÜN RAPOR\n\n` +
-        `💰 TOPLAM: ${total} TL\n` +
-        `📌 İŞLEM SAYISI: ${records.length}`
-    );
-});
-
-// RESET (opsiyonel)
-bot.hears('reset', (ctx) => {
-    total = 0;
-    records = [];
-    ctx.reply('♻ Sistem sıfırlandı');
+    ctx.reply(`📊 TOPLAM: ${total} TL\n📌 İşlem: ${records.length}`);
 });
 
 bot.launch();
 
-console.log('BOT ÇALIŞIYOR 🚀');
+console.log("BOT ÇALIŞIYOR 🚀");
