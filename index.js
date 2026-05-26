@@ -8,13 +8,14 @@ const allowedUsers = [
     '@finans_admin34',
     '@donciccio5',
     '@soyluuu'
-];
+].map(u => u.toLowerCase());
 
-// 💰 RAM SYSTEM
+// 💰 DATABASE
 let total = 0;
 let count = 0;
+let logs = [];
 
-// 📩 MESAJ KONTROL
+// 🔥 TEK MESAJ HANDLER (ÇİFT SAYMA YOK)
 bot.on('text', (ctx) => {
 
     if (ctx.from.is_bot) return;
@@ -25,8 +26,18 @@ bot.on('text', (ctx) => {
         ? '@' + ctx.message.from.username.toLowerCase()
         : '';
 
-    // ❌ izinli değilse çık
+    // ❌ izinli değil
     if (!allowedUsers.includes(user)) return;
+
+    // 📊 SAY KOMUTU
+    if (text === 'say') {
+        ctx.reply(
+            `📊 BUGÜN RAPOR\n\n` +
+            `💰 TOPLAM: ${total} TL\n` +
+            `📌 İŞLEM SAYISI: ${count}`
+        );
+        return;
+    }
 
     // ❌ reply değilse çık
     if (!ctx.message.reply_to_message) return;
@@ -40,30 +51,15 @@ bot.on('text', (ctx) => {
 
     const amount = Math.max(...numbers.map(Number));
 
+    // ❌ duplicate engel (EN ÖNEMLİ FIX)
+    const msgId = ctx.message.message_id;
+    if (logs.includes(msgId)) return;
+    logs.push(msgId);
+
     total += amount;
     count++;
 
     ctx.reply(`💰 ${amount} TL kaydedildi`);
-});
-
-// 📊 SAY KOMUTU (FIXED)
-bot.on('text', (ctx) => {
-
-    const text = ctx.message.text.toLowerCase().trim();
-
-    const user = ctx.message.from.username
-        ? '@' + ctx.message.from.username.toLowerCase()
-        : '';
-
-    if (user !== '@vertexfinans') return;
-
-    if (text !== 'say') return;
-
-    ctx.reply(
-        `📊 BUGÜN RAPOR\n\n` +
-        `💰 TOPLAM: ${total} TL\n` +
-        `📌 İŞLEM SAYISI: ${count}`
-    );
 });
 
 bot.launch();
