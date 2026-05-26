@@ -1,22 +1,18 @@
-const { Client, GatewayIntentBits } = require('discord.js'); // eğer discord değil telegram ise söyle düzeltirim
-require('dotenv').config();
-
-// Telegram bot kullanıyorsan (telegraf öneriyorum)
 const { Telegraf } = require('telegraf');
 
 const bot = new Telegraf(process.env.BOT_TOKEN);
 
-// START komutu
+// start
 bot.start((ctx) => {
     ctx.reply('Bot aktif 🚀');
 });
 
-// basit test mesaj
+// mesaj
 bot.on('text', (ctx) => {
     ctx.reply('Mesaj alındı 👍');
 });
 
-// hata yakalama (crash önler)
+// hata yakalama
 bot.catch((err) => {
     console.log('Bot error:', err);
 });
