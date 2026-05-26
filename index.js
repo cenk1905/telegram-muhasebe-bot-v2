@@ -9,11 +9,11 @@ const allowedUsers = [
     '@donciccio5'
 ];
 
-// RAM DATABASE
+// RAM DATA
 let total = 0;
 let records = [];
 
-// MESAJ KONTROL
+// MESAJ
 bot.on('text', (ctx) => {
 
     const text = ctx.message.text.toLowerCase();
@@ -25,10 +25,10 @@ bot.on('text', (ctx) => {
     // kullanıcı kontrol
     if (!allowedUsers.includes(user)) return;
 
-    // reply kontrol
+    // SADECE REPLY
     if (!ctx.message.reply_to_message) return;
 
-    // onay kontrol
+    // onay yoksa çık
     if (!text.includes('onay')) return;
 
     // sayı çek
@@ -37,40 +37,26 @@ bot.on('text', (ctx) => {
 
     const amount = Math.max(...numbers.map(Number));
 
-    const now = new Date();
-    const date = now.toLocaleDateString('tr-TR');
-    const time = now.toLocaleTimeString('tr-TR');
-
     total += amount;
 
-    // kayıt
     records.push({
-        date,
-        time,
         user,
-        amount
+        amount,
+        time: new Date().toLocaleString('tr-TR')
     });
 
     ctx.reply(`💰 ${amount} TL kaydedildi\n📊 Toplam: ${total} TL`);
 });
 
-// SAY KOMUTU
+// SAY
 bot.hears('say', (ctx) => {
-
     ctx.reply(
         `📊 BUGÜN RAPOR\n\n` +
         `💰 TOPLAM: ${total} TL\n` +
-        `📌 İŞLEM SAYISI: ${records.length}`
+        `📌 İŞLEM: ${records.length}`
     );
-});
-
-// RESET (opsiyonel)
-bot.hears('reset', (ctx) => {
-    total = 0;
-    records = [];
-    ctx.reply('♻ Sistem sıfırlandı');
 });
 
 bot.launch();
 
-console.log('BOT ÇALIŞIYOR 🚀'); 
+console.log('BOT ÇALIŞIYOR 🚀');
