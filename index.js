@@ -2,7 +2,7 @@ const { Telegraf } = require('telegraf');
 
 const bot = new Telegraf(process.env.BOT_TOKEN);
 
-// ✔ izinli kullanıcılar
+// ✔ izinli kullanıcılar (onay yazabilenler)
 const allowedUsers = [
     '@vertexfinans',
     '@finans_admin34',
@@ -10,12 +10,18 @@ const allowedUsers = [
     '@soyluuu'
 ].map(u => u.toLowerCase());
 
+// ✔ SAY komutu kullanabilenler
+const allowedSayUsers = [
+    '@tikopays',
+    '@tikopayfinanss'
+].map(u => u.toLowerCase());
+
 // 💰 DATABASE
 let total = 0;
 let count = 0;
 let logs = [];
 
-// 🔥 TEK MESAJ HANDLER (ÇİFT SAYMA YOK)
+// 📩 MESAJ YAKALA
 bot.on('text', (ctx) => {
 
     if (ctx.from.is_bot) return;
@@ -26,16 +32,35 @@ bot.on('text', (ctx) => {
         ? '@' + ctx.message.from.username.toLowerCase()
         : '';
 
-    // ❌ izinli değil
-    if (!allowedUsers.includes(user)) return;
+    // ❌ izinli değilse çık
+    if (!allowedUsers.includes(user)) {
 
-    // 📊 SAY KOMUTU
+        // SAY kontrolü yine de çalışabilsin diye burada bırakıyoruz
+        if (text === 'say') {
+
+            if (!allowedSayUsers.includes(user)) return;
+
+            ctx.reply(
+                `📊 GRUP RAPOR\n\n` +
+                `💰 TOPLAM: ${total} TL\n` +
+                `📌 İŞLEM SAYISI: ${count}`
+            );
+        }
+
+        return;
+    }
+
+    // 📊 SAY KOMUTU (yetkili kişiler)
     if (text === 'say') {
+
+        if (!allowedSayUsers.includes(user)) return;
+
         ctx.reply(
-            `📊 BUGÜN RAPOR\n\n` +
+            `📊 GRUP RAPOR\n\n` +
             `💰 TOPLAM: ${total} TL\n` +
             `📌 İŞLEM SAYISI: ${count}`
         );
+
         return;
     }
 
@@ -51,7 +76,7 @@ bot.on('text', (ctx) => {
 
     const amount = Math.max(...numbers.map(Number));
 
-    // ❌ duplicate engel (EN ÖNEMLİ FIX)
+    // duplicate engel
     const msgId = ctx.message.message_id;
     if (logs.includes(msgId)) return;
     logs.push(msgId);
