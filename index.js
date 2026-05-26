@@ -1,8 +1,23 @@
 const { Telegraf } = require('telegraf');
+const mongoose = require('mongoose');
 
 const bot = new Telegraf(process.env.BOT_TOKEN);
 
-// ✔ ONAY atabilecek kullanıcılar
+// MongoDB connect
+mongoose.connect(process.env.MONGODB_URI)
+.then(() => console.log('MongoDB connected ✔'))
+.catch(err => console.log('MongoDB error', err));
+
+// ✔ SCHEMA
+const logSchema = new mongoose.Schema({
+    user: String,
+    amount: Number,
+    time: { type: Date, default: Date.now }
+});
+
+const Log = mongoose.model('Log', logSchema);
+
+// ✔ izinli kullanıcılar (onay)
 const allowedUsers = [
     '@vertexfinans',
     '@finans_admin34',
@@ -10,16 +25,13 @@ const allowedUsers = [
     '@soyluuu'
 ].map(u => u.toLowerCase());
 
-// ✔ SAY yazabilecek kullanıcılar
+// ✔ say yetkisi
 const allowedSayUsers = [
     '@tikopays',
     '@tikopayfinanss'
 ].map(u => u.toLowerCase());
 
-// 💰 DATABASE
-let logs = [];
-
-// 📅 bugün mü kontrol
+// 📅 bugün kontrol
 function isToday(date) {
     const now = new Date();
     return (
@@ -29,8 +41,8 @@ function isToday(date) {
     );
 }
 
-// 📩 MESAJ YAKALA
-bot.on('text', (ctx) => {
+// 📩 MESAJ
+bot.on('text', async (ctx) => {
 
     if (ctx.from.is_bot) return;
 
@@ -45,6 +57,8 @@ bot.on('text', (ctx) => {
 
         if (!allowedSayUsers.includes(user)) return;
 
+        const logs = await Log.find();
+
         let dailyTotal = 0;
         let dailyCount = 0;
 
@@ -56,7 +70,7 @@ bot.on('text', (ctx) => {
         });
 
         ctx.reply(
-            `📊 BUGÜN RAPOR (00:01 - 23:59)\n\n` +
+            `📊 BUGÜN RAPOR\n\n` +
             `💰 TOPLAM: ${dailyTotal} TL\n` +
             `📌 İŞLEM SAYISI: ${dailyCount}`
         );
@@ -64,10 +78,10 @@ bot.on('text', (ctx) => {
         return;
     }
 
-    // ❌ izinli değilse çık
+    // ❌ izinli değil
     if (!allowedUsers.includes(user)) return;
 
-    // ❌ reply değilse çık
+    // ❌ reply yoksa çık
     if (!ctx.message.reply_to_message) return;
 
     // ❌ onay yoksa çık
@@ -79,13 +93,14 @@ bot.on('text', (ctx) => {
 
     const amount = Math.max(...numbers.map(Number));
 
-    logs.push({
+    // 💾 MongoDB kayıt
+    await Log.create({
         user,
         amount,
         time: new Date()
     });
 
-    ctx.reply(`💰 ${amount} TL kaydedildi`);
+    ctx.reply(`💰 ${amount} TL kaydedildi ✔`);
 });
 
 bot.launch();
