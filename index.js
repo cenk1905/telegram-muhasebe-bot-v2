@@ -3,15 +3,14 @@ require('dotenv').config();
 const { Telegraf } = require('telegraf');
 const mongoose = require('mongoose');
 
-/* ================== BOT ================== */
 const bot = new Telegraf(process.env.BOT_TOKEN);
 
-/* ================== MONGODB ================== */
+/* ================= MONGO ================= */
 mongoose.connect(process.env.mongo)
   .then(() => console.log("MongoDB connected ✔"))
-  .catch(err => console.log("Mongo Error:", err));
+  .catch(err => console.log(err));
 
-/* ================== ALLOWED USERS ================== */
+/* ================= USERS ================= */
 const allowedUsers = [
   '@vertexfinans',
   '@finans_admin34',
@@ -20,28 +19,31 @@ const allowedUsers = [
   '@tikopayfinanss'
 ];
 
-/* ================== LOG MODEL ================== */
-const LogSchema = new mongoose.Schema({
+/* ================= DB ================= */
+const logSchema = new mongoose.Schema({
   user: String,
   amount: Number,
   date: { type: Date, default: Date.now }
 });
 
-const Log = mongoose.model('Log', LogSchema);
+const Log = mongoose.model('Log', logSchema);
 
-/* ================== MESSAGE HANDLER ================== */
+/* ================= MESSAGE ================= */
 bot.on('text', async (ctx) => {
-  const text = ctx.message.text;
+
+  const text = ctx.message.text.toLowerCase();
   const user = ctx.from.username ? '@' + ctx.from.username : '';
 
   if (!allowedUsers.includes(user)) return;
   if (!ctx.message.reply_to_message) return;
   if (!text.includes('onay')) return;
 
-  const numbers = text.match(/\d+/g);
+  const beforeOnay = text.split('onay')[0];
+  const numbers = beforeOnay.match(/\d+/g);
+
   if (!numbers) return;
 
-  const amount = Math.max(...numbers.map(Number));
+  const amount = Number(numbers[numbers.length - 1]);
 
   await Log.create({
     user,
@@ -51,18 +53,23 @@ bot.on('text', async (ctx) => {
   await ctx.reply(`💰 ${amount} TL kaydedildi ✔`);
 });
 
-/* ================== SAY COMMAND ================== */
+/* ================= SAY ================= */
 bot.hears('say', async (ctx) => {
+
   const today = new Date();
-  today.setHours(0, 0, 0, 0);
+  today.setHours(0,0,0,0);
 
   const logs = await Log.find({ date: { $gte: today } });
 
-  const total = logs.reduce((sum, l) => sum + l.amount, 0);
+  const total = logs.reduce((a,b) => a + b.amount, 0);
 
-  await ctx.reply(`📊 BUGÜN TOPLAM\n💰 ${total} TL\n📌 Adet: ${logs.length}`);
+  await ctx.reply(
+`📊 BUGÜN
+💰 Toplam: ${total} TL
+📌 Adet: ${logs.length}`
+  );
 });
 
-/* ================== START ================== */
+/* ================= START ================= */
 bot.launch();
 console.log("BOT ÇALIŞIYOR 🚀");
