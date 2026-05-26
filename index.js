@@ -10,8 +10,7 @@ const bot = new Telegraf(process.env.BOT_TOKEN);
 
 
 // GOOGLE JSON
-const serviceAccount = require("./telegram-muhasebe-bot-8c7fcd0a75ba.json");
-
+const serviceAccount = require("./telegram-muhasebe-bot-8c7fcd0a75ba.json")
 
 // GOOGLE SHEET ID
 const SHEET_ID = "1i2bt89YV7-6oCPZ3rF_Ed0hxd0FnHNmS8bH_h7dPj7g";
