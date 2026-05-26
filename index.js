@@ -5,12 +5,12 @@ const mongoose = require('mongoose');
 
 const bot = new Telegraf(process.env.BOT_TOKEN);
 
-/* ================= MONGO ================= */
+/* MONGO */
 mongoose.connect(process.env.mongo)
   .then(() => console.log("MongoDB connected ✔"))
-  .catch(err => console.log(err));
+  .catch(err => console.log("Mongo error:", err));
 
-/* ================= USERS ================= */
+/* USERS */
 const allowedUsers = [
   '@vertexfinans',
   '@finans_admin34',
@@ -19,57 +19,63 @@ const allowedUsers = [
   '@tikopayfinanss'
 ];
 
-/* ================= DB ================= */
-const logSchema = new mongoose.Schema({
+/* MODEL */
+const Log = mongoose.model('Log', new mongoose.Schema({
   user: String,
   amount: Number,
   date: { type: Date, default: Date.now }
-});
+}));
 
-const Log = mongoose.model('Log', logSchema);
-
-/* ================= MESSAGE ================= */
+/* MESSAGE SAFE HANDLER */
 bot.on('text', async (ctx) => {
+  try {
 
-  const text = ctx.message.text.toLowerCase();
-  const user = ctx.from.username ? '@' + ctx.from.username : '';
+    if (!ctx.message) return;
 
-  if (!allowedUsers.includes(user)) return;
-  if (!ctx.message.reply_to_message) return;
-  if (!text.includes('onay')) return;
+    const text = (ctx.message.text || '').toLowerCase();
+    const user = ctx.from?.username ? '@' + ctx.from.username : '';
 
-  const beforeOnay = text.split('onay')[0];
-  const numbers = beforeOnay.match(/\d+/g);
+    if (!allowedUsers.includes(user)) return;
+    if (!ctx.message.reply_to_message) return;
+    if (!text.includes('onay')) return;
 
-  if (!numbers) return;
+    const beforeOnay = text.split('onay')[0];
+    const numbers = beforeOnay.match(/\d+/g);
 
-  const amount = Number(numbers[numbers.length - 1]);
+    if (!numbers) return;
 
-  await Log.create({
-    user,
-    amount
-  });
+    const amount = Number(numbers[numbers.length - 1]);
 
-  await ctx.reply(`💰 ${amount} TL kaydedildi ✔`);
+    await Log.create({ user, amount });
+
+    await ctx.reply(`💰 ${amount} TL kaydedildi ✔`);
+
+  } catch (err) {
+    console.log("BOT ERROR:", err);
+  }
 });
 
-/* ================= SAY ================= */
+/* SAY */
 bot.hears('say', async (ctx) => {
+  try {
 
-  const today = new Date();
-  today.setHours(0,0,0,0);
+    const today = new Date();
+    today.setHours(0,0,0,0);
 
-  const logs = await Log.find({ date: { $gte: today } });
+    const logs = await Log.find({ date: { $gte: today } });
 
-  const total = logs.reduce((a,b) => a + b.amount, 0);
+    const total = logs.reduce((a,b) => a + b.amount, 0);
 
-  await ctx.reply(
+    await ctx.reply(
 `📊 BUGÜN
 💰 Toplam: ${total} TL
 📌 Adet: ${logs.length}`
-  );
+    );
+
+  } catch (err) {
+    console.log(err);
+  }
 });
 
-/* ================= START ================= */
 bot.launch();
 console.log("BOT ÇALIŞIYOR 🚀");
