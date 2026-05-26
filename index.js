@@ -1,33 +1,19 @@
 const { Telegraf } = require('telegraf');
 
-// BOT TOKEN Railway'den gelecek
+// BOT TOKEN (Railway Variables'tan gelir)
 const bot = new Telegraf(process.env.BOT_TOKEN);
 
-// BOT START
+// START
 bot.start((ctx) => {
     ctx.reply('🚀 Bot aktif!');
 });
 
-// MESAJ ALMA
+// mesaj
 bot.on('text', (ctx) => {
-    const text = ctx.message.text.toLowerCase();
-
-    // SAY komutu
-    if (text === 'say') {
-        ctx.reply('📊 Sistem çalışıyor');
-        return;
-    }
-
-    // ONAY kontrolü
-    if (text.includes('onay')) {
-        ctx.reply('✅ Onay alındı ve kaydedildi');
-        return;
-    }
-
-    ctx.reply('Mesaj alındı 👍');
+    ctx.reply('👍 Mesaj alındı');
 });
 
-// HATA YAKALAMA (crash önler)
+// hata yakalama
 bot.catch((err) => {
     console.log('Bot error:', err);
 });
