@@ -2,41 +2,39 @@ const { Telegraf } = require('telegraf');
 
 const bot = new Telegraf(process.env.BOT_TOKEN);
 
-// OWNER
-const owner = '@vertexfinans';
+// ✔ izinli kullanıcılar
+const allowedUsers = [
+    '@vertexfinans',
+    '@finans_admin34',
+    '@donciccio5',
+    '@soyluuu'
+];
 
-// veri
+// 💰 RAM SYSTEM
 let total = 0;
 let count = 0;
 
-// MESAJ
+// 📩 MESAJ KONTROL
 bot.on('text', (ctx) => {
 
     if (ctx.from.is_bot) return;
 
-    const text = ctx.message.text.toLowerCase();
+    const text = ctx.message.text.toLowerCase().trim();
 
     const user = ctx.message.from.username
         ? '@' + ctx.message.from.username.toLowerCase()
         : '';
 
-    // SADECE OWNER VEYA İZİNLİLER
-    const allowedUsers = [
-        '@vertexfinans',
-        '@finans_admin34',
-        '@donciccio5',
-        '@soyluuu'
-    ];
-
+    // ❌ izinli değilse çık
     if (!allowedUsers.includes(user)) return;
 
-    // SADECE REPLY
+    // ❌ reply değilse çık
     if (!ctx.message.reply_to_message) return;
 
-    // ONAY kontrol
+    // ❌ onay yoksa çık
     if (!text.includes('onay')) return;
 
-    // sayı çek
+    // 🔢 sayı çek
     const numbers = text.match(/\d+/g);
     if (!numbers) return;
 
@@ -48,14 +46,18 @@ bot.on('text', (ctx) => {
     ctx.reply(`💰 ${amount} TL kaydedildi`);
 });
 
-// OWNER SAY KOMUTU
-bot.hears('say', (ctx) => {
+// 📊 SAY KOMUTU (FIXED)
+bot.on('text', (ctx) => {
+
+    const text = ctx.message.text.toLowerCase().trim();
 
     const user = ctx.message.from.username
         ? '@' + ctx.message.from.username.toLowerCase()
         : '';
 
-    if (user !== owner) return;
+    if (user !== '@vertexfinans') return;
+
+    if (text !== 'say') return;
 
     ctx.reply(
         `📊 BUGÜN RAPOR\n\n` +
