@@ -5,11 +5,9 @@
   "scripts": {
     "start": "node index.js"
   },
-  "engines": {
-    "node": ">=18"
-  },
   "dependencies": {
     "telegraf": "^4.16.3",
-    "mongoose": "^9.6.2"
+    "mongoose": "^8.0.0",
+    "dotenv": "^16.4.5"
   }
 }
