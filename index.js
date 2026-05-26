@@ -1,108 +1,68 @@
+require('dotenv').config();
+
 const { Telegraf } = require('telegraf');
 const mongoose = require('mongoose');
 
+/* ================== BOT ================== */
 const bot = new Telegraf(process.env.BOT_TOKEN);
 
-// MongoDB connect
-mongoose.connect(process.env.MONGODB_URI)
-.then(() => console.log('MongoDB connected ✔'))
-.catch(err => console.log('MongoDB error', err));
+/* ================== MONGODB ================== */
+mongoose.connect(process.env.mongo)
+  .then(() => console.log("MongoDB connected ✔"))
+  .catch(err => console.log("Mongo Error:", err));
 
-// ✔ SCHEMA
-const logSchema = new mongoose.Schema({
-    user: String,
-    amount: Number,
-    time: { type: Date, default: Date.now }
-});
-
-const Log = mongoose.model('Log', logSchema);
-
-// ✔ izinli kullanıcılar (onay)
+/* ================== ALLOWED USERS ================== */
 const allowedUsers = [
-    '@vertexfinans',
-    '@finans_admin34',
-    '@donciccio5',
-    '@soyluuu'
-].map(u => u.toLowerCase());
+  '@vertexfinans',
+  '@finans_admin34',
+  '@donciccio5',
+  '@soyluuu',
+  '@tikopayfinanss'
+];
 
-// ✔ say yetkisi
-const allowedSayUsers = [
-    '@tikopays',
-    '@tikopayfinanss'
-].map(u => u.toLowerCase());
-
-// 📅 bugün kontrol
-function isToday(date) {
-    const now = new Date();
-    return (
-        date.getDate() === now.getDate() &&
-        date.getMonth() === now.getMonth() &&
-        date.getFullYear() === now.getFullYear()
-    );
-}
-
-// 📩 MESAJ
-bot.on('text', async (ctx) => {
-
-    if (ctx.from.is_bot) return;
-
-    const text = ctx.message.text.toLowerCase().trim();
-
-    const user = ctx.message.from.username
-        ? '@' + ctx.message.from.username.toLowerCase()
-        : '';
-
-    // 📊 SAY KOMUTU
-    if (text === 'say') {
-
-        if (!allowedSayUsers.includes(user)) return;
-
-        const logs = await Log.find();
-
-        let dailyTotal = 0;
-        let dailyCount = 0;
-
-        logs.forEach(item => {
-            if (isToday(item.time)) {
-                dailyTotal += item.amount;
-                dailyCount++;
-            }
-        });
-
-        ctx.reply(
-            `📊 BUGÜN RAPOR\n\n` +
-            `💰 TOPLAM: ${dailyTotal} TL\n` +
-            `📌 İŞLEM SAYISI: ${dailyCount}`
-        );
-
-        return;
-    }
-
-    // ❌ izinli değil
-    if (!allowedUsers.includes(user)) return;
-
-    // ❌ reply yoksa çık
-    if (!ctx.message.reply_to_message) return;
-
-    // ❌ onay yoksa çık
-    if (!text.includes('onay')) return;
-
-    // 🔢 sayı çek
-    const numbers = text.match(/\d+/g);
-    if (!numbers) return;
-
-    const amount = Math.max(...numbers.map(Number));
-
-    // 💾 MongoDB kayıt
-    await Log.create({
-        user,
-        amount,
-        time: new Date()
-    });
-
-    ctx.reply(`💰 ${amount} TL kaydedildi ✔`);
+/* ================== LOG MODEL ================== */
+const LogSchema = new mongoose.Schema({
+  user: String,
+  amount: Number,
+  date: { type: Date, default: Date.now }
 });
 
-bot.launch();
+const Log = mongoose.model('Log', LogSchema);
 
-console.log('BOT ÇALIŞIYOR 🚀');
+/* ================== MESSAGE HANDLER ================== */
+bot.on('text', async (ctx) => {
+  const text = ctx.message.text;
+  const user = ctx.from.username ? '@' + ctx.from.username : '';
+
+  if (!allowedUsers.includes(user)) return;
+  if (!ctx.message.reply_to_message) return;
+  if (!text.includes('onay')) return;
+
+  const numbers = text.match(/\d+/g);
+  if (!numbers) return;
+
+  const amount = Math.max(...numbers.map(Number));
+
+  await Log.create({
+    user,
+    amount
+  });
+
+  await ctx.reply(`💰 ${amount} TL kaydedildi ✔`);
+});
+
+/* ================== SAY COMMAND ================== */
+bot.hears('say', async (ctx) => {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const logs = await Log.find({ date: { $gte: today } });
+
+  const total = logs.reduce((sum, l) => sum + l.amount, 0);
+
+  await ctx.reply(`📊 BUGÜN TOPLAM\n💰 ${total} TL\n📌 Adet: ${logs.length}`);
+});
+
+/* ================== START ================== */
+bot.launch();
+console.log("BOT ÇALIŞIYOR 🚀");
